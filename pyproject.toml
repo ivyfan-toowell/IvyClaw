@@ -1,0 +1,59 @@
+[project]
+name = "ivyclaw"
+version = "0.1.0"
+description = "IvyClaw —— 开源、可自部署、多模型路由、多渠道接入的开发场景 Agent Claw"
+readme = "README.md"
+requires-python = ">=3.13"
+
+# 版本说明：用 ">=" 下限，uv 自动解析到当前最新可用版本。
+# 经核对 LangChain 官方 changelog 与 PyPI（2026-05 线）：
+#   deepagents → 0.6 线   langgraph → 1.1 线   langchain → 1.x 线
+#   langgraph-checkpoint-postgres → 3.0.x   langgraph-checkpoint-redis → 0.4.x
+# API 随版本演进，动手前请按 3.3 Step 5 实测为准。
+dependencies = [
+    # ===== Agent 核心 =====
+    "deepagents>=0.6.0",                  # Harness 层（本项目主角）
+    "langchain>=1.1.0",                   # 构建模块（init_chat_model / 模型 profiles）
+    "langgraph>=1.1.0",                   # 编排运行时（checkpointer / streaming / HITL）
+    "langchain-openai>=0.3.0",            # 模型集成包（国产模型走 OpenAI 兼容接口）
+    # ===== 持久化底座 + 异步驱动栈（L9，本章备好）=====
+    "langgraph-checkpoint-postgres>=3.0.0",  # PostgresSaver / AsyncPostgresSaver + store
+    "psycopg[binary,pool]>=3.2.0",           # Postgres 驱动（psycopg3）+ 异步连接池（后半第8章用）
+    "redis>=5.0.0",                          # Redis 客户端，自带 redis.asyncio 异步接口
+    # ===== Web 服务（后半第 8 章起用，本章先备好）=====
+    "fastapi>=0.115.0",                   # 异步 Web 框架
+    "uvicorn[standard]>=0.30.0",          # ASGI 服务器
+    # ===== 配置与日志 =====
+    "loguru>=0.7.0",
+    "pydantic-settings>=2.0.0",           # 配置体系（见第 4.3 节）
+    "python-dotenv>=1.0.0",               # 加载 .env
+    "langchain-daytona>=0.0.8",
+    "lark-oapi>=1.7.3",
+    "arq>=0.28.0",
+    "slowapi>=0.1.10",
+    "prometheus-client>=0.26.0",
+    "tavily-python>=0.8.1",
+    "langchain-mcp-adapters>=0.3.2",
+]
+
+[project.optional-dependencies]
+# MCP：第 5 章
+mcp = ["langchain-mcp-adapters>=0.1.0"]
+# 沙箱：第 6 章基础接入 / 第 11 章沙箱池（届时 uv sync --extra sandbox 再装）
+sandbox = ["langchain-modal>=0.0.1"]
+# Redis 作为 checkpointer/store（可选，需 Redis Stack）：第 8 章
+redis-graph = ["langgraph-checkpoint-redis>=0.4.0"]
+# 独立向量库（PostgresStore 已含 pgvector，独立 RAG 时才需要）：第 8 章
+vectorstore = ["langchain-postgres>=0.0.12"]
+# 任务队列 + 限流（后台长任务 / 并发治理）：第 10、11 章
+serving = ["arq>=0.26.0", "slowapi>=0.1.9", "sse-starlette>=2.1.0"]
+# 多副本部署：第 12 章
+deploy = ["gunicorn>=22.0.0"]
+# 可观测 + 压测：第 12 章
+obs = ["langsmith>=0.3.0", "prometheus-client>=0.20.0", "locust>=2.29.0"]
+
+[tool.uv]
+# ShanYangClaw 是应用项目（不发布到 PyPI），不需要把自己打成包。
+# 设为非包项目：uv sync 只装依赖、不构建本项目本身。
+# 否则 uv 会尝试用 hatchling 构建本项目，但因没有与项目同名的 shanyang_claw/ 目录而报错。
+package = false

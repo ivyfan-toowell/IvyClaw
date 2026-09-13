@@ -1,0 +1,14 @@
+# deploy/prometheus.yml
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'ivyclaw-web'
+    static_configs:
+      - targets: ['web:8000']
+    metrics_path: /metrics
+
+  - job_name: 'ivyclaw-worker'
+    static_configs:
+      - targets: ['worker:8002']
+    metrics_path: /metrics

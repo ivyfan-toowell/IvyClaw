@@ -1,0 +1,21 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv/
+*.pyc
+.env
+logs/
+
+# IDE
+.idea/
+.vscode/
+
+test_cp.txt
+loadtest/results*
+eval/baseline.json

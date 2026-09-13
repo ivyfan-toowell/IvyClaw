@@ -1,0 +1,64 @@
+# docker-compose.prod.yml —— ivyclaw 生产编排
+services:
+  web:
+    build: .
+    ports: ["18700:8000"]
+    env_file: .env
+    depends_on: [postgres, redis]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+    # 使用 Dockerfile 默认 CMD：bash scripts/start_web.sh
+
+  worker:
+    build: .
+    command: ["arq", "tasks.worker.WorkerSettings"]
+    env_file: .env
+    depends_on: [postgres, redis]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    expose: ["8002"]
+    restart: unless-stopped
+
+  feishu:
+    build: .
+    command: ["python", "-m", "channels.feishu_ws"]
+    env_file: .env
+    depends_on: [postgres, redis]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: ivy
+      POSTGRES_PASSWORD: ${IVC_PG_PASSWORD}
+      POSTGRES_DB: ivyclaw
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    restart: unless-stopped
+
+  redis:
+    image: redis/redis-stack:latest
+    volumes: ["redisdata:/data"]
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./deploy/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports: ["127.0.0.1:19090:9090"]
+    depends_on: [web, worker]
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    ports: ["127.0.0.1:13000:3000"]
+    volumes: ["grafanadata:/var/lib/grafana"]
+    depends_on: [prometheus]
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
+  grafanadata:
