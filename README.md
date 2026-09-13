@@ -35,6 +35,9 @@ IvyClaw 是一个基于 **DeepAgents / LangGraph** 构建的软件研发智能�
 ---
 
 ## 🏗️ Architecture
+下图展示了 IvyClaw 从用户接入、网关治理、多智能体编排、工具调用、沙箱执行、状态持久化、异步任务到可观测与部署的整体架构。
+
+![IvyClaw Architecture](docs/images/ivyclaw-architecture.png)
 
 ```mermaid
 flowchart TD
