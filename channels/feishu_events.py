@@ -12,7 +12,7 @@ logger = get_logger()
 
 
 def parse_feishu_message(message: dict[str, Any], sender: dict[str, Any]) -> InboundMessage | None:
-    """提取 text/post 的文本；忽略附件并记录不支持的类型。"""
+    """提取 text/post 中的普通文本和代码块，记录无法处理的消息。"""
     if sender.get("sender_type") == "app":
         return None
     kind = message.get("message_type")
@@ -24,7 +24,8 @@ def parse_feishu_message(message: dict[str, Any], sender: dict[str, Any]) -> Inb
             post = content if "content" in content else content.get("zh_cn", content.get("en_us", {}))
             parts = [post.get("title", "")]
             for row in post.get("content", []):
-                parts.append("".join(node.get("text", "") for node in row if node.get("tag") in {"text", "a"}))
+                parts.append("".join(node.get("text", "") for node in row
+                                     if node.get("tag") in {"text", "a", "code_block"}))
             text = "\n".join(parts)
         else:
             logger.info("忽略飞书消息类型：{} message={}", kind, message.get("message_id"))
@@ -35,6 +36,7 @@ def parse_feishu_message(message: dict[str, Any], sender: dict[str, Any]) -> Inb
     user_id = (sender.get("sender_id") or {}).get("open_id")
     chat_id = message.get("chat_id")
     if not isinstance(text, str) or not text.strip() or not user_id or not chat_id:
+        logger.info("忽略飞书无有效文本或标识的消息：type={} message={}", kind, message.get("message_id"))
         return None
     return InboundMessage(channel="feishu", user_id=user_id, text=text.strip(), conversation_id=chat_id)
 

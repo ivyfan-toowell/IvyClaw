@@ -60,6 +60,51 @@ def test_feishu_long_post_is_not_silently_discarded(localized: bool) -> None:
     assert msg is not None and msg.text == "需求\n" + text
 
 
+@pytest.mark.parametrize("locale", [None, "zh_cn", "en_us"])
+def test_feishu_code_block_task_preserves_text(locale: str | None) -> None:
+    """从飞书代码块粘贴的开发任务不能被当成空消息丢弃。"""
+    text = "开发联调任务\n\n实现 normalize_text(value: str) -> str\n    保留内部缩进\n测试中文与空白"
+    post = {"content": [[{"tag": "code_block", "language": "PlainText", "text": text}]]}
+    content = {locale: post} if locale else post
+    msg = parse_feishu_message({"message_type": "post", "content": json.dumps(content), "chat_id": "chat"},
+                                {"sender_id": {"open_id": "alice"}})
+    assert msg is not None and msg.text == text
+
+
+def test_feishu_mixed_post_preserves_code_and_links() -> None:
+    """普通段落、代码块和链接按原始顺序交给调度器。"""
+    post = {"title": "任务", "content": [
+        [{"tag": "text", "text": "请实现："}, {"tag": "at", "user_id": "bot"}],
+        [{"tag": "code_block", "language": "Python", "text": "def example():\n    return '中文'"}],
+        [{"tag": "a", "text": "项目约定", "href": "https://example.com"}],
+    ]}
+    msg = parse_feishu_message({"message_type": "post", "content": json.dumps(post), "chat_id": "chat"},
+                                {"sender_id": {"open_id": "alice"}})
+    assert msg is not None and msg.text == "任务\n请实现：\ndef example():\n    return '中文'\n项目约定"
+
+
+@pytest.mark.parametrize("text", [None, 17, ["invalid"]])
+def test_feishu_malformed_code_block_is_ignored(text: object) -> None:
+    """代码块 text 字段异常不能使长连接接收回调崩溃。"""
+    post = {"content": [[{"tag": "code_block", "text": text}]]}
+    assert parse_feishu_message({"message_type": "post", "content": json.dumps(post), "chat_id": "chat"},
+                                {"sender_id": {"open_id": "alice"}}) is None
+
+
+def test_feishu_empty_post_is_logged(monkeypatch) -> None:
+    """仅附件或空内容的 post 即使跳过，也要留下消息 ID 供排查。"""
+    from unittest.mock import Mock
+    from channels import feishu_events
+    logged = Mock()
+    monkeypatch.setattr(feishu_events.logger, "info", logged)
+    post = {"content": [[{"tag": "img", "image_key": "image"}]]}
+    assert parse_feishu_message({"message_type": "post", "content": json.dumps(post),
+                                "chat_id": "chat", "message_id": "empty-post"},
+                                {"sender_id": {"open_id": "alice"}}) is None
+    logged.assert_called_once()
+    assert logged.call_args.args[-1] == "empty-post"
+
+
 @pytest.mark.parametrize("content", ["not JSON", "null", "[]"])
 def test_feishu_malformed_content_is_ignored(content: str) -> None:
     """坏消息不能使 SDK 接收回调崩溃。"""
