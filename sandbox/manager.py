@@ -106,7 +106,8 @@ def seed_project_into_sandbox(backend, sandbox, root: Path) -> str:
     files = _collect_project_files(
         root,
         dest_root=workdir,
-        subdirs=["app", "tests", "skills"],
+        subdirs=["app", "agent", "api", "channels", "gateway", "infra", "middleware", "profiles",
+                 "subagents", "tools", "sandbox", "tasks", "obs", "eval", "scripts", "tests", "skills"],
         extra_files=["AGENTS.md","pyproject.toml", "uv.lock"],
     )
     # 一个文件都没收集到 → 大概率是项目结构不对（app/ tests/ skills/ 全空），

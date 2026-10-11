@@ -14,6 +14,7 @@ from langchain.agents.middleware import AgentMiddleware
 from langchain.messages import ToolMessage
 from langchain.tools.tool_node import ToolCallRequest
 from langgraph.types import Command
+from dataclasses import replace
 
 from infra.logging import get_logger
 from obs.metrics import AGENT_TOOL_CALLS, AGENT_TOOL_DURATION
@@ -32,7 +33,19 @@ class ToolAuditMiddleware(AgentMiddleware):
         start = time.perf_counter()
         status = "ok"
         try:
-            return await handler(request)
+            result = await handler(request)
+            if tool_name == "execute":
+                # Docker backend 的文件 JSON 必须完整；仅在命令工具交付模型时限制输出。
+                if isinstance(result, ToolMessage):
+                    result = self._bounded_message(result)
+                elif isinstance(result, Command) and isinstance(result.update, dict):
+                    messages = result.update.get("messages")
+                    if isinstance(messages, list):
+                        result = replace(result, update={**result.update, "messages": [
+                            self._bounded_message(message) if isinstance(message, ToolMessage) else message
+                            for message in messages
+                        ]})
+            return result
         except Exception:
             status = "error"
             raise
@@ -41,6 +54,12 @@ class ToolAuditMiddleware(AgentMiddleware):
             AGENT_TOOL_CALLS.labels(tool_name, status).inc()        # 埋点
             AGENT_TOOL_DURATION.labels(tool_name).observe(elapsed)  # 埋点
             logger.info("🔧 工具 {} {}（{:.0f} ms）", tool_name, status, elapsed * 1000)
+
+    @staticmethod
+    def _bounded_message(message: ToolMessage) -> ToolMessage:
+        if isinstance(message.content, str) and len(message.content) > 8000:
+            return message.model_copy(update={"content": "[前部命令输出已省略]\n" + message.content[-8000:]})
+        return message
 
 
 

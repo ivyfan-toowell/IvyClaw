@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import json
+import asyncio
 
 import lark_oapi as lark
 from lark_oapi.api.im.v1 import (
@@ -25,7 +26,8 @@ logger = get_logger()
 class FeishuChannel(ChannelAdapter):
     name = "feishu"
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """构造飞书发送客户端。"""
         s = get_settings()
         self._app_id = s.feishu_app_id
         self._app_secret = s.feishu_app_secret.get_secret_value()
@@ -34,16 +36,32 @@ class FeishuChannel(ChannelAdapter):
             lark.Client.builder()
             .app_id(self._app_id)
             .app_secret(self._app_secret)
+            .timeout(10)
             .build()
         )
 
     async def send(self, conversation_id: str, text: str) -> None:
         """把回复发回飞书会话（conversation_id = chat_id）。"""
+        chunks: list[str] = []
+        buffer = ""
+        size = 0
+        for character in text or "（无内容）":
+            width = len(character.encode("utf-8"))
+            if size + width > 12000:
+                chunks.append(buffer)
+                buffer, size = "", 0
+            buffer += character
+            size += width
+        chunks.append(buffer)
+        for chunk in chunks:
+            await asyncio.to_thread(self._send_text, conversation_id, chunk)
+
+    def _send_text(self, conversation_id: str, text: str) -> None:
         body = (
             CreateMessageRequestBody.builder()
             .receive_id(conversation_id)
             .msg_type("text")
-            .content(json.dumps({"text": text}))   # 文本消息内容是 JSON 字符串
+            .content(json.dumps({"text": text}, ensure_ascii=False))
             .build()
         )
         req = (
@@ -55,3 +73,4 @@ class FeishuChannel(ChannelAdapter):
         resp = self._client.im.v1.message.create(req)
         if not resp.success():
             logger.warning("飞书发消息失败：code={} msg={}", resp.code, resp.msg)
+            raise RuntimeError(f"飞书发送失败 code={resp.code}")

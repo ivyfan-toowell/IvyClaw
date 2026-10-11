@@ -1,5 +1,14 @@
 """subagents/schemas.py --  子代理的结构化输出schema """
 from pydantic import BaseModel, Field
+from typing import Literal
+
+
+class TaskDecision(BaseModel):
+    """无工具分类器的显式调度决策。"""
+
+    kind: Literal["chat", "research", "development"]
+    complexity: Literal["simple", "complex"] = "simple"
+    need_research: bool = False
 
 class ReviewResult(BaseModel):
     """Reviewer 子代理的结构化审查结论。

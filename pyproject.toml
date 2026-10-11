@@ -1,6 +1,6 @@
 [project]
 name = "ivyclaw"
-version = "0.1.0"
+version = "2.0.0"
 description = "IvyClaw —— 开源、可自部署、多模型路由、多渠道接入的开发场景 Agent Claw"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -34,6 +34,7 @@ dependencies = [
     "prometheus-client>=0.26.0",
     "tavily-python>=0.8.1",
     "langchain-mcp-adapters>=0.3.2",
+    "mcp>=1.29.0,<2",
 ]
 
 [project.optional-dependencies]
@@ -57,3 +58,12 @@ obs = ["langsmith>=0.3.0", "prometheus-client>=0.20.0", "locust>=2.29.0"]
 # 设为非包项目：uv sync 只装依赖、不构建本项目本身。
 # 否则 uv 会尝试用 hatchling 构建本项目，但因没有与项目同名的 shanyang_claw/ 目录而报错。
 package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+asyncio_mode = "auto"
+addopts = "--basetemp=.pytest_tmp"
+
+[dependency-groups]
+dev = ["pytest>=8", "pytest-asyncio>=0.24"]

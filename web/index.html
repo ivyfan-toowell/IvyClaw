@@ -437,6 +437,63 @@
   </section>
 </div>
 
+<div class="backend-modal open" id="authModal" aria-hidden="false" role="dialog" aria-modal="true" aria-label="IvyClaw 账户">
+  <form class="backend-panel" id="authForm">
+    <h2 style="font-size:18px;color:#dce9fb">登录 IvyClaw</h2>
+    <p style="color:#9ab0d0;font-size:13px">登录后保存你的对话与用户偏好。</p>
+    <label for="authUsername">用户名</label>
+    <input class="backend-input" id="authUsername" placeholder="请输入用户名" autocomplete="username" required minlength="3" maxlength="64" pattern="[a-zA-Z0-9_.\-]+" style="width:100%;margin:8px 0">
+    <label for="authPassword">密码</label>
+    <input class="backend-input" id="authPassword" type="password" placeholder="密码（至少 6 位）" autocomplete="current-password" required minlength="6" maxlength="128" style="width:100%;margin:8px 0">
+    <div style="display:flex;gap:12px;margin-top:12px">
+      <button class="retry-btn" id="loginSubmit" type="submit">登录</button>
+    </div>
+    <p id="authError" role="alert" style="color:#ff7f99;font-size:13px"></p>
+    <p id="authNotice" role="status" style="color:#7ce8bc;font-size:13px"></p>
+    <p style="color:#9ab0d0;font-size:13px">还没有账户？ <button class="retry-btn" id="registerBtn" type="button">前往注册</button></p>
+    <button class="mini-btn auth-backend-settings" type="button">连接设置</button>
+  </form>
+  <form class="backend-panel" id="registerForm" hidden>
+    <h2 style="font-size:18px;color:#dce9fb">注册 IvyClaw</h2>
+    <p style="color:#9ab0d0;font-size:13px">创建自己的账户，保存对话、偏好与记忆。</p>
+    <label for="registerUsername">用户名</label>
+    <input class="backend-input" id="registerUsername" placeholder="3–64 位字母、数字、下划线、点或短横线" autocomplete="username" required minlength="3" maxlength="64" pattern="[a-zA-Z0-9_.\-]+" style="width:100%;margin:8px 0">
+    <label for="registerPassword">密码</label>
+    <input class="backend-input" id="registerPassword" type="password" placeholder="密码（至少 6 位）" autocomplete="new-password" required minlength="6" maxlength="128" style="width:100%;margin:8px 0">
+    <label for="registerConfirm">确认密码</label>
+    <input class="backend-input" id="registerConfirm" type="password" placeholder="再次输入密码" autocomplete="new-password" required minlength="6" maxlength="128" style="width:100%;margin:8px 0">
+    <div style="display:flex;gap:12px;margin-top:12px"><button class="retry-btn" id="registerSubmit" type="submit">创建账户</button></div>
+    <p id="registerError" role="alert" style="color:#ff7f99;font-size:13px"></p>
+    <p style="color:#9ab0d0;font-size:13px">已有账户？ <button class="retry-btn" id="backToLoginBtn" type="button">返回登录</button></p>
+    <button class="mini-btn auth-backend-settings" type="button">连接设置</button>
+  </form>
+  <form class="backend-panel" id="localServiceForm" hidden>
+    <h2 style="font-size:18px;color:#dce9fb">打开 IvyClaw 服务</h2>
+    <p style="color:#9ab0d0;font-size:13px">当前打开的是本地 HTML 文件。请进入服务网站后注册或登录，以保存登录状态。</p>
+    <label for="localServiceUrl">服务地址</label>
+    <input class="backend-input" id="localServiceUrl" type="url" value="http://localhost:18700/" required style="width:100%;margin:8px 0">
+    <p style="color:#9ab0d0;font-size:12px">本项目 Docker 地址为 http://localhost:18700/；开发服务使用 8000 端口时，请修改上方地址。</p>
+    <button class="retry-btn" type="submit">打开服务网站</button>
+    <p id="localServiceError" role="alert" style="color:#ff7f99;font-size:13px"></p>
+  </form>
+</div>
+<button id="logoutBtn" class="retry-btn" style="position:fixed;right:20px;top:16px;z-index:110;display:none" type="button">退出登录</button>
+<button id="memorySettingsBtn" class="retry-btn" style="position:fixed;right:20px;top:54px;z-index:110;display:none" type="button">偏好与记忆</button>
+<div class="backend-modal" id="memoryModal">
+  <form class="backend-panel" id="preferencesForm" style="max-height:85vh;overflow:auto">
+    <h2 style="font-size:18px;color:#dce9fb">我的偏好与记忆</h2>
+    <label>回复语言 <input class="backend-input" id="preferredLanguage" value="zh-CN" required maxlength="40"></label><br><br>
+    <label>回复风格 <select class="backend-input" id="responseStyle"><option value="concise">简洁</option><option value="detailed">详细</option></select></label><br><br>
+    <label>技术栈 <input class="backend-input" id="techStack" placeholder="Python, FastAPI"></label><br><br>
+    <label>协作习惯 <textarea class="backend-input" id="collaborationStyle" maxlength="500" style="width:100%;margin-top:8px"></textarea></label><br><br>
+    <label><input type="checkbox" id="rememberFacts"> 从对话中提取长期事实与偏好</label>
+    <p style="color:#9ab0d0;font-size:12px">对话完成后保存历史与任务经历。自动事实提取只使用你明确表达的原文，不保存密码与密钥。</p>
+    <pre id="memoryView" style="white-space:pre-wrap;font-size:12px;max-height:200px;overflow:auto"></pre>
+    <p id="memoryError" role="alert" style="color:#ff7f99"></p>
+    <div style="display:flex;gap:12px"><button class="retry-btn" type="submit">保存偏好</button><button class="retry-btn" id="closeMemoryBtn" type="button">关闭</button></div>
+  </form>
+</div>
+
 <div class="backend-modal" id="backendModal" aria-hidden="true">
   <div class="backend-panel" role="dialog" aria-modal="true" aria-labelledby="backendPanelTitle">
     <div class="backend-panel-head">
@@ -545,8 +602,9 @@
   resize(); frame();
 })();
 
-const STORE_KEY = "ivyclaw_web_conversations_v1";
-const ACTIVE_KEY = "ivyclaw_web_active_conversation_v1";
+let STORE_KEY = "";
+let ACTIVE_KEY = "";
+let authUser = null;
 const BACKEND_MODE_KEY = "ivyclaw_backend_mode_v1";
 const BACKEND_CUSTOM_KEY = "devmate_backend_url"; // 兼容旧页面
 const IS_NETWORK_PAGE = location.protocol === "http:" || location.protocol === "https:";
@@ -588,20 +646,230 @@ const PAW = `<svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
   <circle cx="18.5" cy="37" r="1.5" fill="#8D5CFF"/><circle cx="45.5" cy="37" r="1.5" fill="#48D8FF"/>
 </svg>`;
 
-let conversations = loadConversations();
-let activeId = localStorage.getItem(ACTIVE_KEY);
+let conversations = [];
+let activeId = null;
 let busy = false;
 let toastTimer = null;
 let backendMode = localStorage.getItem(BACKEND_MODE_KEY) || (IS_NETWORK_PAGE ? "auto" : "custom");
 let customBackend = (localStorage.getItem(BACKEND_CUSTOM_KEY) || "http://localhost:8000").replace(/\/$/, "");
 
-if (!conversations.length) {
-  const first = makeConversation();
-  conversations.push(first);
-  activeId = first.id;
-  saveConversations();
+async function apiFetch(path, options = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+  let response;
+  try {
+    response = await fetch(getBackend() + path, {
+      ...options, credentials:"include", signal:options.signal || controller.signal,
+      headers:{"Content-Type":"application/json", "X-CSRF-Token":authUser?.csrfToken || "", ...(options.headers || {})}
+    });
+  } catch (err) {
+    throw new Error(err.name === "AbortError"
+      ? "服务响应超时，请稍后重试"
+      : `无法连接服务 ${getBackend()}，请确认服务已启动并检查连接设置。`);
+  } finally { clearTimeout(timer); }
+  if (response.status === 401) {
+    authUser = null;
+    document.getElementById("authModal").classList.add("open");
+    document.getElementById("authModal").setAttribute("aria-hidden", "false");
+    document.getElementById("logoutBtn").style.display = "none";
+    document.getElementById("memorySettingsBtn").style.display = "none";
+    document.getElementById("memoryModal").classList.remove("open");
+    throw new Error(path === "/auth/login" ? "用户名或密码错误" : "登录已过期，请重新登录");
+  }
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(typeof error.detail === "string" ? error.detail : "请求失败 HTTP " + response.status);
+  }
+  return response;
 }
-if (!conversations.some(c => c.id === activeId)) activeId = conversations[0].id;
+
+async function useAccount(user) {
+  authUser = user;
+  STORE_KEY = "ivyclaw_web_conversations_v2:" + user.userId;
+  ACTIVE_KEY = "ivyclaw_web_active_v2:" + user.userId;
+  conversations = loadConversations();
+  activeId = localStorage.getItem(ACTIVE_KEY);
+  try {
+    const records = await (await apiFetch("/conversations")).json();
+    for (const record of records) {
+      const existing = conversations.find(c => c.id === record.conversationId);
+      const updatedAt = Date.parse(record.updatedAt);
+      if (!existing) {
+        conversations.push({id:record.conversationId, title:record.title, createdAt:updatedAt,
+                            updatedAt, messages:[], serverOnly:true, pendingJob:null});
+      } else if (!existing.pendingJob && updatedAt > existing.updatedAt) {
+        existing.serverOnly = true;
+        existing.updatedAt = updatedAt;
+      }
+    }
+    conversations.sort((a,b) => b.updatedAt - a.updatedAt);
+  } catch (err) { showToast("暂时无法同步历史：" + err.message); }
+  if (!conversations.length) conversations.push(makeConversation());
+  if (!conversations.some(c => c.id === activeId)) activeId = conversations[0].id;
+  await loadServerConversation(currentConversation());
+  saveConversations();
+  document.getElementById("authModal").classList.remove("open");
+  document.getElementById("authModal").setAttribute("aria-hidden", "true");
+  const logout = document.getElementById("logoutBtn");
+  logout.style.display = "block";
+  logout.textContent = user.username + " · 退出";
+  document.getElementById("memorySettingsBtn").style.display = "block";
+  renderConversationList();
+  renderCurrentConversation();
+  const pending = currentConversation();
+  if (pending.pendingJob) {
+    setRequestBusy(true);
+    const text = pending.messages.filter(m => m.role === "user").at(-1)?.text || "";
+    await executeRequest(text, pending.id, appendTemporaryBot(pendingHtml()));
+  }
+}
+
+function showAuthView(view = "login", notice = "") {
+  document.getElementById("authForm").hidden = !IS_NETWORK_PAGE || view !== "login";
+  document.getElementById("registerForm").hidden = !IS_NETWORK_PAGE || view !== "register";
+  document.getElementById("localServiceForm").hidden = IS_NETWORK_PAGE;
+  document.getElementById("authError").textContent = "";
+  document.getElementById("registerError").textContent = "";
+  document.getElementById("authNotice").textContent = notice;
+  for (const id of ["authPassword", "registerPassword", "registerConfirm"]) {
+    document.getElementById(id).value = "";
+  }
+  document.getElementById("registerConfirm").setCustomValidity("");
+  document.getElementById("authModal").classList.add("open");
+  document.getElementById("authModal").setAttribute("aria-hidden", "false");
+  const field = IS_NETWORK_PAGE ? (view === "register" ? "registerUsername" : "authUsername") : "localServiceUrl";
+  document.getElementById(field).focus();
+}
+
+async function submitAccount(register = false) {
+  const form = document.getElementById(register ? "registerForm" : "authForm");
+  if (form.dataset.submitting === "true") return;
+  if (register) {
+    const confirm = document.getElementById("registerConfirm");
+    confirm.setCustomValidity(confirm.value === document.getElementById("registerPassword").value ? "" : "两次输入的密码不一致");
+  }
+  if (!form.reportValidity()) return;
+  const error = document.getElementById(register ? "registerError" : "authError");
+  error.textContent = "";
+  document.getElementById("authNotice").textContent = "";
+  const buttons = form.querySelectorAll("button");
+  const submit = document.getElementById(register ? "registerSubmit" : "loginSubmit");
+  form.dataset.submitting = "true";
+  buttons.forEach(button => button.disabled = true);
+  submit.textContent = register ? "注册中…" : "登录中…";
+  let created = false;
+  try {
+    const username = document.getElementById(register ? "registerUsername" : "authUsername").value.trim();
+    const response = await apiFetch(register ? "/auth/register" : "/auth/login", {
+      method:"POST", body:JSON.stringify({username,
+        password:document.getElementById(register ? "registerPassword" : "authPassword").value})
+    });
+    const user = await response.json();
+    if (register) {
+      created = true;
+      document.getElementById("authUsername").value = user.username;
+      // 注册接口保持兼容的会话契约；页面撤销该临时会话，等待用户显式登录。
+      await apiFetch("/auth/logout", {method:"POST", headers:{"X-CSRF-Token":user.csrfToken}});
+      showAuthView("login", "注册成功，请使用新账户登录。");
+      document.getElementById("authPassword").focus();
+    } else {
+      await useAccount(user);
+      document.getElementById("authPassword").value = "";
+    }
+  } catch (err) {
+    if (created) {
+      showAuthView("login", "账户已创建，请使用新账户登录。");
+      document.getElementById("authError").textContent = err.message;
+    } else { error.textContent = err.message; }
+  } finally {
+    form.dataset.submitting = "false";
+    buttons.forEach(button => button.disabled = false);
+    submit.textContent = register ? "创建账户" : "登录";
+  }
+}
+document.getElementById("authForm").addEventListener("submit", event => { event.preventDefault(); submitAccount(); });
+document.getElementById("registerForm").addEventListener("submit", event => { event.preventDefault(); submitAccount(true); });
+document.getElementById("registerBtn").addEventListener("click", () => {
+  document.getElementById("registerUsername").value = document.getElementById("authUsername").value;
+  showAuthView("register");
+});
+document.getElementById("backToLoginBtn").addEventListener("click", () => showAuthView("login"));
+for (const id of ["registerPassword", "registerConfirm"]) {
+  document.getElementById(id).addEventListener("input", () => document.getElementById("registerConfirm").setCustomValidity(""));
+}
+document.getElementById("localServiceForm").addEventListener("submit", event => {
+  event.preventDefault();
+  try {
+    const target = new URL(document.getElementById("localServiceUrl").value);
+    if (!["http:", "https:"].includes(target.protocol) || target.username || target.password) throw new Error("请填写 http:// 或 https:// 服务地址");
+    location.assign(target.origin + "/");
+  } catch (err) { document.getElementById("localServiceError").textContent = err.message; }
+});
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+  if (busy) { showToast("任务完成后再退出登录"); return; }
+  try {
+    await apiFetch("/auth/logout", {method:"POST"});
+    authUser = null; conversations = []; activeId = null;
+    renderCurrentConversation(); renderConversationList();
+    showAuthView("login");
+    document.getElementById("logoutBtn").style.display = "none";
+    document.getElementById("memorySettingsBtn").style.display = "none";
+  } catch (err) { showToast(err.message); }
+});
+
+async function bootAuth() {
+  if (!IS_NETWORK_PAGE) { showAuthView(); return; }
+  try { await useAccount(await (await apiFetch("/auth/me")).json()); }
+  catch (err) {
+    showAuthView("login");
+    if (err.message !== "登录已过期，请重新登录") document.getElementById("authError").textContent = err.message;
+  }
+}
+
+async function loadServerConversation(conversation) {
+  if (!conversation?.serverOnly) return;
+  const response = await apiFetch("/conversations/" + encodeURIComponent(conversation.id));
+  const record = await response.json();
+  conversation.messages = record.turns.flatMap(turn => [
+    {role:"user", text:turn.userText, ts:Date.parse(turn.createdAt)},
+    {role:"bot", text:turn.reply, ts:Date.parse(turn.createdAt)}
+  ]);
+  conversation.serverOnly = false;
+}
+
+document.getElementById("memorySettingsBtn").addEventListener("click", async () => {
+  if (!authUser) return;
+  const modal = document.getElementById("memoryModal");
+  modal.classList.add("open");
+  try {
+    const memory = await (await apiFetch("/me/memory")).json();
+    const preferences = memory.preferences;
+    document.getElementById("preferredLanguage").value = preferences.preferredLanguage;
+    document.getElementById("responseStyle").value = preferences.responseStyle;
+    document.getElementById("techStack").value = preferences.techStack.join(", ");
+    document.getElementById("collaborationStyle").value = preferences.collaborationStyle;
+    document.getElementById("rememberFacts").checked = preferences.rememberFacts;
+    document.getElementById("memoryView").textContent = memory.semantic.length
+      ? memory.semantic.map(fact => fact.key + "：" + fact.value).join("\n")
+      : "暂无长期事实；完成对话后将保存任务经历。";
+    document.getElementById("memoryError").textContent = "";
+  } catch (err) { document.getElementById("memoryError").textContent = err.message; }
+});
+document.getElementById("closeMemoryBtn").addEventListener("click", () => document.getElementById("memoryModal").classList.remove("open"));
+document.getElementById("preferencesForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  try {
+    await apiFetch("/me/preferences", {method:"PATCH", body:JSON.stringify({
+      preferredLanguage:document.getElementById("preferredLanguage").value,
+      responseStyle:document.getElementById("responseStyle").value,
+      techStack:document.getElementById("techStack").value.split(",").map(value => value.trim()).filter(Boolean),
+      collaborationStyle:document.getElementById("collaborationStyle").value,
+      rememberFacts:document.getElementById("rememberFacts").checked
+    })});
+    document.getElementById("memoryModal").classList.remove("open");
+    showToast("偏好已保存，下次任务会使用这些偏好");
+  } catch (err) { document.getElementById("memoryError").textContent = err.message; }
+});
 
 function makeId(){
   if (crypto && typeof crypto.randomUUID === "function") return "web:" + crypto.randomUUID();
@@ -620,11 +888,14 @@ function loadConversations(){
       title:typeof c.title === "string" && c.title ? c.title : "未命名对话",
       createdAt:Number(c.createdAt) || Date.now(),
       updatedAt:Number(c.updatedAt) || Number(c.createdAt) || Date.now(),
+      pendingJob:typeof c.pendingJob === "string" ? c.pendingJob : null,
+      serverOnly:!!c.serverOnly,
       messages:Array.isArray(c.messages) ? c.messages.filter(m => m && (m.role === "user" || m.role === "bot") && typeof m.text === "string") : []
     }));
   } catch { return []; }
 }
 function saveConversations(){
+  if (!authUser) return;
   conversations.sort((a,b) => b.updatedAt - a.updatedAt);
   localStorage.setItem(STORE_KEY, JSON.stringify(conversations));
   localStorage.setItem(ACTIVE_KEY, activeId || "");
@@ -707,6 +978,7 @@ function closeBackendSettings(){
   backendModal.setAttribute("aria-hidden", "true");
 }
 backendSettingsBtn.addEventListener("click", openBackendSettings);
+document.querySelectorAll(".auth-backend-settings").forEach(button => button.addEventListener("click", openBackendSettings));
 backendCloseBtn.addEventListener("click", closeBackendSettings);
 backendModal.addEventListener("click", e => { if (e.target === backendModal) closeBackendSettings(); });
 
@@ -782,10 +1054,12 @@ function renderConversationList(){
     conversationList.appendChild(item);
   }
 }
-function switchConversation(id){
+async function switchConversation(id){
   if (busy) { showToast("当前回答还在生成，完成后再切换对话"); return; }
   if (!conversations.some(c => c.id === id)) return;
   activeId = id;
+  try { await loadServerConversation(currentConversation()); }
+  catch (err) { showToast("读取历史失败：" + err.message); return; }
   saveConversations();
   renderConversationList();
   renderCurrentConversation();
@@ -793,6 +1067,7 @@ function switchConversation(id){
   input.focus();
 }
 function createNewConversation(){
+  if (!authUser) return;
   if (busy) { showToast("当前回答还在生成，完成后再新建对话"); return; }
   const c = makeConversation();
   conversations.unshift(c);
@@ -1010,8 +1285,7 @@ function showRequestError(bubble, err, text, conversationId){
 
 async function executeRequest(text, conversationId, bubble){
   try{
-    let result = await tryStream(text, bubble, conversationId);
-    if (!result.ok) result = await fallbackRequest(text, bubble, conversationId);
+    const result = await queuedRequest(text, bubble, conversationId);
     const reply = result.reply || "（无内容）";
     bubble.innerHTML = render(reply);
     bindCopy(bubble);
@@ -1044,6 +1318,7 @@ async function retryFailedRequest(text, conversationId, bubble){
 }
 
 async function send(){
+  if (!authUser) { document.getElementById("authModal").classList.add("open"); return; }
   const text = input.value.trim();
   if (!text || busy) return;
   const conv = currentConversation();
@@ -1066,7 +1341,33 @@ async function send(){
 }
 
 
-/* ---------- 优先流式：POST /chat/stream（SSE） ---------- */
+async function queuedRequest(text, bubble, conversationId) {
+  const conversation = conversations.find(c => c.id === conversationId);
+  if (!conversation.pendingJob) {
+    const response = await apiFetch("/jobs", {method:"POST", body:JSON.stringify({text, conversation_id:conversationId})});
+    conversation.pendingJob = (await response.json()).job_id;
+    saveConversations();
+  }
+  while (true) {
+    const data = await (await apiFetch("/jobs/" + encodeURIComponent(conversation.pendingJob))).json();
+    if (data.error) {
+      conversation.pendingJob = null; saveConversations();
+      throw new Error(data.error);
+    }
+    if (data.status === "not_found") {
+      conversation.pendingJob = null; saveConversations();
+      throw new Error("任务结果已过期，请重新提交");
+    }
+    if (data.status === "complete") {
+      conversation.pendingJob = null; saveConversations();
+      return {ok:true, reply:data.result?.reply || "（无内容）"};
+    }
+    bubble.textContent = data.status === "in_progress" ? "Agent 正在处理，完成后会显示结果。可以刷新页面继续等待。" : "任务已入队，等待执行…";
+    await new Promise(resolve => setTimeout(resolve, 1500));
+  }
+}
+
+/* ---------- 兼容旧接口的流式客户端 ---------- */
 async function tryStream(text, bubble, conversationId){
   let resp;
   try{
@@ -1150,8 +1451,8 @@ window.addEventListener("keydown", e => { if (e.key === "Escape") { closeBackend
 syncBackendUI();
 renderConversationList();
 renderCurrentConversation();
-checkHealth();
-input.focus();
+if (IS_NETWORK_PAGE) checkHealth();
+bootAuth();
 </script>
 </body>
 </html>

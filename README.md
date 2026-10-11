@@ -1,4 +1,8 @@
-# 🦞 IvyClaw
+# 🦞 IvyClaw v2
+
+多渠道长任务、账户登录、用户记忆及 8 个 MCP 工具的配置与启用，见 [优化说明](docs/optimization.md)。
+
+当前版本：**2.0.0**。更新内容、验证结果和已知限制见 [更新记录](CHANGELOG.md)。Docker 启动后的 Web 入口为 `http://localhost:18700/`。
 
 > **面向软件研发任务的多智能体 AI Agent 工程系统**
 

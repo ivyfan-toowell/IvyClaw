@@ -7,30 +7,48 @@
 """
 import argparse
 import asyncio
+import getpass
 
 import httpx
 
 BASE = "http://localhost:8000"
 
 
-async def ask(session: str, text: str) -> None:
-    async with httpx.AsyncClient(timeout=300) as client:
-        # 走通用 webhook 的 generic 入口（conversation_id=session 实现 CLI 续聊）
-        r = await client.post(f"{BASE}/webhook/generic", json={
-            "text": text,
-            "source": "cli",
-            "conversation_id": f"cli:{session}",
-        })
-        data = r.json()
-        print("\nDevMate:", data.get("reply", data))
+async def ask(session: str, text: str, username: str | None = None) -> None:
+    """使用 Web 账户登录并提交后台任务，密码不进入命令行参数。"""
+    username = username or input("用户名：").strip()
+    password = getpass.getpass("密码：")
+    async with httpx.AsyncClient(timeout=30) as client:
+        login = await client.post(f"{BASE}/auth/login", json={"username": username, "password": password})
+        login.raise_for_status()
+        user = login.json()
+        response = await client.post(f"{BASE}/jobs", json={"text": text, "conversation_id": f"cli:{session}"},
+                                     headers={"X-CSRF-Token": user["csrfToken"]})
+        response.raise_for_status()
+        job_id = response.json()["job_id"]
+        print("任务已入队：", job_id)
+        while True:
+            response = await client.get(f"{BASE}/jobs/{job_id}")
+            response.raise_for_status()
+            result = response.json()
+            if result.get("error"):
+                raise RuntimeError(result["error"])
+            if result["status"] == "complete":
+                print("\nDevMate:", result["result"]["reply"])
+                return
+            if result["status"] == "not_found":
+                raise RuntimeError("任务结果不存在或已过期")
+            await asyncio.sleep(1)
 
 
-def main():
+def main() -> None:
+    """解析会话与登录账户参数。"""
     p = argparse.ArgumentParser(description="DevMate CLI")
     p.add_argument("--session", default="default", help="会话名（同名续聊）")
+    p.add_argument("--username", help="已有 Web 账户用户名；密码交互输入")
     p.add_argument("text", help="要对 DevMate 说的话")
     args = p.parse_args()
-    asyncio.run(ask(args.session, args.text))
+    asyncio.run(ask(args.session, args.text, args.username))
 
 
 if __name__ == "__main__":

@@ -48,17 +48,18 @@ class DockerSandbox(BaseSandbox):
     def execute(self, command: str, *, timeout: int | None = None) -> ExecuteResponse:
         """在容器里跑一条 shell 命令，返回 ExecuteResponse（output + exit_code + truncated）。"""
         proc = subprocess.run(
-            ["docker", "exec", "-w", self.workdir, self.container_id, "sh", "-lc", command],
+            ["docker", "exec", "-w", self.workdir, self.container_id, "sh", "-c", command],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,   # 合并 stderr 到 stdout
             timeout=timeout,
         )
         text = proc.stdout.decode("utf-8", errors="replace")
-        truncated = len(text) > 8000
+        # BaseSandbox 文件工具在这里传输 JSON 协议，截断会破坏 JSON，导致读文件反复失败。
+        # 面向模型的输出限制交由工具层处理（例如 MCP 有界读取和测试输出）。
         return ExecuteResponse(
-            output=text[-8000:],        # 截断尾部，避免巨量输出灌爆上下文
+            output=text,
             exit_code=proc.returncode,
-            truncated=truncated,
+            truncated=False,
         )
 
     # ---------- 必须实现 3：上传文件（write_file/edit_file 底层依赖它）----------

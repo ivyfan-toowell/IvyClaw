@@ -99,46 +99,52 @@ async def create_readonly_sandbox(source_sandbox: DockerSandbox) -> DockerSandbo
     if code != 0:
         raise RuntimeError(f"起只读沙箱失败：{out}")
     ro = DockerSandbox(container_id=name, workdir=workdir)
-    # 把源容器代码搬进来(经宿主中转),然后把工作目录设为不可写
-    # 把源容器代码搬出来，再通过 upload_files 写进 reviewer 容器
+    try:
+        # 把源容器代码搬进来(经宿主中转),然后把工作目录设为不可写
+        # 把源容器代码搬出来，再通过 upload_files 写进 reviewer 容器
 
-    import subprocess
+        import subprocess
 
-    # 源沙箱工作目录 → 打成 tar 数据
-    proc = await asyncio.to_thread(
-        subprocess.run,
-        ["docker", "exec", source_sandbox.container_id,"tar", "-C", workdir, "-cf", "-", "."],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    if proc.returncode != 0:
-        raise RuntimeError(f"导出源沙箱代码失败：{proc.stderr.decode(errors='replace')}")
+        # 源沙箱工作目录 → 打成 tar 数据
+        proc = await asyncio.to_thread(
+            subprocess.run,
+            ["docker", "exec", source_sandbox.container_id,"tar", "-C", workdir, "-cf", "-", "."],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        if proc.returncode != 0:
+            raise RuntimeError(f"导出源沙箱代码失败：{proc.stderr.decode(errors='replace')}")
 
-    # tar 数据 → reviewer 沙箱工作目录
-    proc2 = await asyncio.to_thread(
-        subprocess.run,
-        ["docker", "exec", "-i", name, "tar", "-C", workdir, "-xf", "-"],
-        input=proc.stdout,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    if proc2.returncode != 0:
-        raise RuntimeError(f"写入 reviewer 沙箱失败：{proc2.stderr.decode(errors='replace')}")
+        # tar 数据 → reviewer 沙箱工作目录
+        proc2 = await asyncio.to_thread(
+            subprocess.run,
+            ["docker", "exec", "-i", name, "tar", "-C", workdir, "-xf", "-"],
+            input=proc.stdout,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        if proc2.returncode != 0:
+            raise RuntimeError(f"写入 reviewer 沙箱失败：{proc2.stderr.decode(errors='replace')}")
 
 
-    # chmod 去掉写位(用 root 改,因为非 root 改不动自己没权限的位)
-    code, out = await _run(["docker", "exec","-u", "1000:1000",name,"chmod", "-R", "a-w",workdir])
-    if code != 0:
-        raise RuntimeError(f"设置 reviewer 只读失败：{out}")
-    logger.info("只读 reviewer 沙箱已起：{}", name)
-    return ro
+        # chmod 去掉写位(用 root 改,因为非 root 改不动自己没权限的位)
+        code, out = await _run(["docker", "exec","-u", "1000:1000",name,"chmod", "-R", "a-w",workdir])
+        if code != 0:
+            raise RuntimeError(f"设置 reviewer 只读失败：{out}")
+        logger.info("只读 reviewer 沙箱已起：{}", name)
+        return ro
+    except BaseException:
+        await destroy_sandbox(ro)
+        raise
 
 
 async def seed_project(
     sandbox: DockerSandbox,
     root: Path | None = None,
-    subdirs: tuple[str, ...] = ("app", "tests", "skills"),
-    extra_files: tuple[str, ...] = ("AGENTS.md",),
+    subdirs: tuple[str, ...] = ("app", "agent", "api", "channels", "gateway", "infra", "middleware",
+                                "profiles", "subagents", "tools", "sandbox", "tasks", "obs", "eval",
+                                "scripts", "tests", "skills"),
+    extra_files: tuple[str, ...] = ("AGENTS.md", "pyproject.toml", "uv.lock"),
 ) -> None:
     """
     把宿主项目 seed 进容器工作目录（docker cp）。
@@ -156,12 +162,13 @@ async def seed_project(
         if not base.exists():
             continue
 
-    for fp in base.rglob("*"):
-        if fp.is_file():
-            relative_path = fp.relative_to(root).as_posix()
-            target_path = f"{workdir}/{relative_path}"
-
-            files_to_upload.append((target_path, fp.read_bytes()))
+        for fp in base.rglob("*"):
+            if fp.is_file() and "__pycache__" not in fp.parts and not any(
+                part.startswith(".") for part in fp.relative_to(root).parts
+            ):
+                relative_path = fp.relative_to(root).as_posix()
+                target_path = f"{workdir}/{relative_path}"
+                files_to_upload.append((target_path, fp.read_bytes()))
 
     # ② 收集 AGENTS.md 这类额外文件
     for name in extra_files:
@@ -186,6 +193,10 @@ async def seed_project(
 
 async def destroy_sandbox(sandbox: DockerSandbox) -> None:
     """销毁容器（用完即弃）。tmpfs 工作目录随容器一起消失，不残留。"""
+    code, resources = await _run(["docker", "exec", sandbox.container_id, "sh", "-c",
+                                 "cat /sys/fs/cgroup/memory.peak; cat /sys/fs/cgroup/memory.events"])
+    if code == 0:
+        logger.info("沙箱回收前内存统计：container={} peak_bytes及events={}", sandbox.container_id, resources)
     await _run(["docker", "rm", "-f", sandbox.container_id])
     logger.info("容器已销毁：{}", sandbox.container_id)
 

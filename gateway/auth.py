@@ -8,13 +8,15 @@ from fastapi import Header, HTTPException, status
 from infra.settings import get_settings
 
 
-async def require_api_key(gateway_api_key: str | None = Header(None)) -> str:
+async def require_api_key(gateway_api_key: str | None = Header(None, alias="gateway-api-key"),
+                          x_api_key: str | None = Header(None, alias="X-API-Key")) -> str:
     """
     校验请求头 X-API-Key。返回它对应的租户标识（这里简化为 key 本身）。
     生产里：key → 租户的映射查数据库/配置；这里用 settings 里配的允许列表演示。
     """
     s = get_settings()
     allowed = s.gateway_api_keys  # dict: {gateway_api_key: tenant_id}
+    gateway_api_key = x_api_key or gateway_api_key
     if not gateway_api_key or gateway_api_key not in allowed:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

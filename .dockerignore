@@ -8,3 +8,5 @@ __pycache__
 .vscode
 loadtest/results*
 eval/baseline.json
+logs/
+.pytest_tmp/

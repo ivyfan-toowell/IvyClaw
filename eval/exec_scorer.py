@@ -24,7 +24,8 @@ async def score_by_execution(agent, case: dict) -> dict:
         # ③ 跑 pytest 看通过
         r = sandbox.execute("cd /home/agent && python -m pytest -q 2>&1 | tail -5")
         passed = ("passed" in r.output
-                  and "failed" not in r.output and "error" not in r.output.lower())
+                  and "failed" not in r.output
+                  and "error" not in r.output.lower())
         # ④ 静态检查：取回代码验规范（货币没用 float、函数有类型注解）
         target = case.get("target_file", "")
         code = b""

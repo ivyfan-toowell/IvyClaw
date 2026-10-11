@@ -107,13 +107,15 @@ class AgentRuntime:
     agent: Any
     sandbox: Any
     client: Any | None
+    backend: Any = None
+    workdir: str = ""
 
 
 async def build_agent(
         sandbox_backend: Any,
         workdir: str,
-        checkpointer=None,
-        store=None,
+        checkpointer: Any = None,
+        store: Any = None,
         user_id: str = "anonymous",
         channel: str = "cli",
 )-> Any:
@@ -134,6 +136,7 @@ async def build_agent(
 
     agent = create_deep_agent(
         model=build_model(),
+        tools=mcp_tools,
         system_prompt=DEVMATE_SYSTEM_PROMPT + (
             f"\n\n【执行环境与路径规则——必须严格遵守】"
             f"\n你运行在一个沙箱里，项目代码已位于 `{workdir}/` 下（含 `{workdir}/app/`、`{workdir}/tests/`）。"
@@ -173,6 +176,7 @@ async def create_agent_runtime(
         store: Any = None,
         user_id: str = "anonymous",
         channel: str = "cli",
+        assemble_agent: bool = True,
 ) -> AgentRuntime:
     """创建沙箱，并返回绑定该沙箱的 Agent 运行时。"""
     backend, sandbox, client, workdir = await build_sandbox_backend(thread_id)
@@ -184,13 +188,13 @@ async def create_agent_runtime(
             store=store,
             user_id=user_id,
             channel=channel,
-        )
+        ) if assemble_agent else None
     except BaseException:
         from sandbox.manager import cleanup_sandbox
 
         await cleanup_sandbox(sandbox)
         raise
-    return AgentRuntime(agent=agent, sandbox=sandbox, client=client)
+    return AgentRuntime(agent=agent, sandbox=sandbox, client=client, backend=backend, workdir=workdir)
 
 
 @asynccontextmanager
@@ -214,7 +218,7 @@ async def agent_session(**kwargs: Any) -> AsyncIterator[Any]:
 
 # agent/main.py（新增：沙箱后端按配置可插拔）
 
-async def build_sandbox_backend(thread_id: str | None = None):
+async def build_sandbox_backend(thread_id: str | None = None) -> tuple[Any, Any, Any | None, str]:
     """
     按 IVC_SANDBOX_PROVIDER 选用沙箱后端，返回 (backend, workdir)。
     docker  → 自托管加固容器（本章，本地可跑）
@@ -226,9 +230,17 @@ async def build_sandbox_backend(thread_id: str | None = None):
     if s.sandbox_provider == "docker":
         from sandbox.docker_manager import create_one_sandbox, seed_project
         sandbox = await create_one_sandbox()
-        await seed_project(sandbox)
+        try:
+            await seed_project(sandbox)
+        except BaseException:
+            from sandbox.manager import cleanup_sandbox
+            await cleanup_sandbox(sandbox)
+            raise
         return sandbox, sandbox, None, s.sandbox_workdir
     else:  # daytona —— 第 6 章那套
         from sandbox.manager import get_or_create_sandbox_backend
-        backend, sandbox, client, workdir = get_or_create_sandbox_backend(thread_id or "default")
+        import asyncio
+        backend, sandbox, client, workdir = await asyncio.to_thread(
+            get_or_create_sandbox_backend, thread_id or "default"
+        )
         return backend, sandbox, client, workdir

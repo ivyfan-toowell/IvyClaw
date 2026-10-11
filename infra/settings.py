@@ -7,7 +7,7 @@ infra/settings.py —— ShanYangClaw 的配置中枢
 """
 import os
 from functools import lru_cache
-from pydantic import SecretStr
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -65,13 +65,7 @@ class Settings(BaseSettings):
 
     # 网关多租户（第 9 章，给 require_api_key / ch09_test_gateway / ch09_test_tenant 用）
     # 形如 {"key-tenant-a": "tenant-a", "key-tenant-b": "tenant-b"}
-    gateway_api_keys: dict[str, str] = {
-        "key-1": "<tenant-001>",
-        "key-2": "<tenant-002>",
-        "key-3": "<tenant-003>",
-        "key-4": "<tenant-004>",
-        "key-5": "<tenant-005>",
-    }
+    gateway_api_keys: dict[str, str] = {}
 
 
     # ===== Daytona沙箱 ===== 还是不要放在这里统一管理
@@ -83,13 +77,21 @@ class Settings(BaseSettings):
     sandbox_runtime: str = "runc"           # runc(加固容器) / runsc(gVisor) / kata(microVM)
     sandbox_image: str = "ivy-sandbox:latest"  # 3.3 会用 Dockerfile 构建这个镜像
     sandbox_workdir: str = "/home/agent"    # 容器内工作目录（tmpfs，可写）
-    sandbox_mem_limit: str = "512m"
+    sandbox_mem_limit: str = "1g"
     sandbox_pids_limit: int = 256
     sandbox_cpus: str = "1.0"
     sandbox_pool_size: int = 4              # 沙箱池并发上限（第 5 节）
 
     # ===== 第 11 章：并发与限流 =====
     max_concurrent_llm: int = 8             # LLM 并发调用上限（第 6 节）
+
+    task_timeout_seconds: int = Field(1800, ge=30, le=86400)
+    stage_model_call_limit: int = Field(40, ge=2, le=200)
+    worker_max_jobs: int = Field(1, ge=1, le=64)
+    job_result_ttl_seconds: int = Field(604800, ge=60)
+    session_ttl_seconds: int = Field(604800, ge=60)
+    session_cookie_secure: bool = False  # HTTPS 部署必须设为 true
+    allowed_origins: list[str] = []  # 同源无需 CORS；跨域需明确配置
 
     # ===== LangSmith 可观测（.env 里用 SYC_LANGSMITH_*，由 env_prefix 映射到这里）=====
     langsmith_tracing: bool = True

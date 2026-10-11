@@ -9,7 +9,7 @@ mkdir -p "$PROMETHEUS_MULTIPROC_DIR"
 # Gunicorn 多 worker
 exec gunicorn api.app:app \
   -k uvicorn.workers.UvicornWorker \
-  --workers 4 \
+  --workers "${IVC_WEB_WORKERS:-2}" \
   --bind 0.0.0.0:8000 \
   --timeout 120 \
   --graceful-timeout 30 \

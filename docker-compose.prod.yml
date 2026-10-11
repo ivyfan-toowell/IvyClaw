@@ -4,6 +4,12 @@ services:
     build: .
     ports: ["18700:8000"]
     env_file: .env
+
+    environment:
+      IVC_POSTGRES_URL: "postgresql://ivy:${IVC_PG_PASSWORD}@postgres:5432/ivyclaw"
+      IVC_DATABASE_URL: "postgresql://ivy:${IVC_PG_PASSWORD}@postgres:5432/ivyclaw"
+      IVC_REDIS_URL: "redis://redis:6379/0"
+
     depends_on: [postgres, redis]
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -14,6 +20,9 @@ services:
     build: .
     command: ["arq", "tasks.worker.WorkerSettings"]
     env_file: .env
+    environment:
+      IVC_DATABASE_URL: "postgresql://ivy:${IVC_PG_PASSWORD}@postgres:5432/ivyclaw"
+      IVC_REDIS_URL: "redis://redis:6379/0"
     depends_on: [postgres, redis]
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -24,6 +33,8 @@ services:
     build: .
     command: ["python", "-m", "channels.feishu_ws"]
     env_file: .env
+    environment:
+      IVC_REDIS_URL: "redis://redis:6379/0"
     depends_on: [postgres, redis]
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock

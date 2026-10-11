@@ -19,3 +19,4 @@ logs/
 test_cp.txt
 loadtest/results*
 eval/baseline.json
+.pytest_tmp/

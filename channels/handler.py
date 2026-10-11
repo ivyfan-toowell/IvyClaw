@@ -1,42 +1,30 @@
-"""channels/handler.py —— 渠道无关的消息处理核心
+"""各渠道统一的身份隔离、调度与记忆处理入口。"""
+from typing import Any
+from app.memory import MemoryService
 
-所有渠道把消息归一化成 InboundMessage 后，都调 handle_message。
-这里不关心消息来自哪——这正是"渠道差异收敛在适配器、核心只认统一请求"的体现。
-"""
-
+from agent.dispatcher import _last_message_text, run_issue
 from channels.base import InboundMessage
 from channels.session import thread_id_for
-from agent.main import agent_session
 from infra.logging import get_logger
 
 logger = get_logger()
 
-async def handle_message(
-        msg: InboundMessage,
-        checkpointer,
-        store,
-        tenant_id: str = "default",
-) -> str:
-    """
-    处理一条归一化消息，返回 DevMate 的回复文本。
-    checkpointer/store 由调用方（服务的 app.state）传入复用。
-    """
-    thread_id = thread_id_for(msg,tenant_id)
-    logger.info("📩  处理消息：channel={} user={} thread={}",
-                msg.channel, msg.user_id, thread_id)
 
-    async with agent_session(
-            thread_id=thread_id,
-            checkpointer=checkpointer,
-            store=store,
-            user_id=msg.user_id,
-            channel=msg.channel,
-    ) as agent:
-        result = await agent.ainvoke(
-            {"messages": [{"role":"user", "content": msg.text}]},
-            config={"configurable": {"thread_id": thread_id}},
-        )
-    return result["messages"][-1].content if result.get("messages")else ""
+async def handle_message(
+    msg: InboundMessage, checkpointer: Any, store: Any, tenant_id: str = "default", redis: Any = None,
+) -> str:
+    """为归一化消息调用显式 dispatcher，复用持久化资源。"""
+    thread_id = thread_id_for(msg, tenant_id)
+    logger.info("处理消息：channel={} user={} thread={} chars={}", msg.channel, msg.user_id, thread_id, len(msg.text))
+    memory = MemoryService(store, msg.user_id, tenant_id, msg.channel, redis=redis) if store is not None else None
+    memory_context = await memory.context(msg.conversation_id, msg.text) if memory else ""
+    result = await run_issue(msg.text, thread_id=thread_id, checkpointer=checkpointer, store=store,
+                             user_id=msg.user_id, channel=msg.channel,
+                             memory_context=memory_context, memory_service=memory, user_text=msg.text)
+    reply = _last_message_text(result)
+    if memory:
+        await memory.record_turn(msg.conversation_id, msg.text, reply)
+    return reply
 
 
 

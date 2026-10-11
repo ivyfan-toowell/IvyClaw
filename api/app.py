@@ -21,6 +21,10 @@ from api.routes.issues import router as issues_router#在下面有
 from channels.webhook import router as webhook_router
 from api.routes.jobs import router as jobs_router    # ← 新增：import 路由
 from tasks.queue import get_arq_redis
+from api.routes.auth import router as auth_router
+from api.routes.memory import router as memory_router
+from gateway.users import setup_users
+from infra.settings import get_settings
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -53,6 +57,7 @@ async def lifespan(app: FastAPI):
     store = AsyncPostgresStore(pool)
     await checkpointer.setup()
     await store.setup()
+    await setup_users(pool)
     logger.info("🔗  AsyncPostgresSaver / AsyncPostgresStore 已 setup")
 
     # ④ Redis 池
@@ -91,10 +96,13 @@ app = FastAPI(title="IvyClaw DevMate API", lifespan=lifespan)
 app.include_router(issues_router)
 app.include_router(webhook_router)
 app.include_router(jobs_router)
+app.include_router(auth_router)
+app.include_router(memory_router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],          # 开发期放开；生产应收紧到你的前端域名
+    allow_origins=get_settings().allowed_origins,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
