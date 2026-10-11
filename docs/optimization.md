@@ -93,6 +93,8 @@ docker build -f sandbox/Dockerfile -t ivy-sandbox:latest .
 docker compose -f docker-compose.prod.yml up -d --build web worker feishu
 ```
 
+两份 Dockerfile 的依赖安装步骤使用 BuildKit 缓存挂载、120 秒下载超时、5 次 HTTP 重试和最多 4 个并发下载，适用于依赖下载慢或不稳定的环境。缓存挂载可在构建重试时复用已完成的下载，UV_LINK_MODE=copy 避免跨文件系统硬链接。仍无法下载时，应检查服务器对 uv.lock 中 files.pythonhosted.org 地址的连通性；运行容器的 .env 不会自动成为镜像构建参数。不要使用 --no-cache 或清理构建缓存来处理下载超时。
+
 2026-10-11 按用户要求已构建镜像并启动本地 Docker Compose 服务进行联调，未发布到远程环境。账户表使用事务 advisory lock 串行创建，避免 Gunicorn 多进程首次建表冲突；记忆复用已有 Store 表。
 
 ## 验证与限制

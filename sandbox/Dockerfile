@@ -6,7 +6,9 @@ COPY --from=uv /uv /uvx /usr/local/bin/
 # 预装测试/常用依赖，避免容器内断网现装
 WORKDIR /opt/ivyclaw
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-install-project
+RUN --mount=type=cache,target=/root/.cache/uv \
+    UV_HTTP_TIMEOUT=120 UV_HTTP_RETRIES=5 UV_CONCURRENT_DOWNLOADS=4 UV_LINK_MODE=copy \
+    uv sync --frozen --no-install-project
 ENV PATH="/opt/ivyclaw/.venv/bin:$PATH"
 ENV UV_PROJECT_ENVIRONMENT="/opt/ivyclaw/.venv"
 ENV UV_NO_SYNC="true"

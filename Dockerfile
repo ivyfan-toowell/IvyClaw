@@ -9,7 +9,9 @@ COPY --from=uv /uv /uvx /usr/local/bin/
 WORKDIR /app
 
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev --extra deploy --extra serving --extra obs
+RUN --mount=type=cache,target=/root/.cache/uv \
+    UV_HTTP_TIMEOUT=120 UV_HTTP_RETRIES=5 UV_CONCURRENT_DOWNLOADS=4 UV_LINK_MODE=copy \
+    uv sync --frozen --no-dev --extra deploy --extra serving --extra obs
 ENV PATH="/app/.venv/bin:$PATH"
 
 COPY . .
